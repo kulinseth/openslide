@@ -180,6 +180,60 @@ void openslide_read_region(openslide_t *osr,
 
 
 /**
+ * Extract native tile covered by the point specified in the pixel
+ * space of the whole slide image.
+ *
+ * Here the tile returned is either JPEG/JPEG2000 compressed tile.
+ * Its client responsbility to know which compression format was used
+ * for the tiles using openslide_get_properties() API.
+ *
+ * openslide_native_tile_size() : returns the size of the tile
+ * Here the _size API call returns the size of the compressed tile
+ * which needs to be returned. Since the memory allocation is done
+ * by the client this model requires client to query the size. The
+ * reason being that size of different tiles are different.
+ *
+ * TODO: extend this function to return the native tile which would
+ *       cover the maximum region given (x, y) point and the native
+ *       width and height
+ */
+OPENSLIDE_PUBLIC()
+void openslide_native_tile(openslide_t *osr,
+                           uint32_t *dest,
+                           int64_t x, int64_t y,
+                           int32_t level);
+OPENSLIDE_PUBLIC()
+void openslide_get_native_tile_size(openslide_t *osr,
+                                    size_t* sz,
+                                    int64_t x, int64_t y,
+                                    int32_t level);
+
+/**
+ * Extract native tile region covered by the (x, y, w, h) region
+ * specified by the whole slide image. This API is not very robust.
+ * Here the native tiles are a list of all the tiles covered by the
+ * specified region in the pixel space.
+ *
+ * dest [out]: contains a list of native tiles, whose memory is allocated
+ * tile_sizes [in]: list of input tile size
+ *
+ */
+OPENSLIDE_PUBLIC()
+void openslide_native_region(openslide_t *osr,
+                             uint32_t **dest,
+                             size_t *tile_sizes,
+                             int64_t x, int64_t y,
+                             int32_t level,
+                             int64_t w, int64_t h);
+
+OPENSLIDE_PUBLIC()
+void openslide_get_native_region_sizes(openslide_t *osr,
+                                       size_t** tile_sizes,
+                                       int64_t x, int64_t y,
+                                       int32_t level,
+                                       int64_t w, int64_t h);
+
+/**
  * Close an OpenSlide object.
  * No other threads may be using the object.
  * After this call returns, the object cannot be used anymore.
