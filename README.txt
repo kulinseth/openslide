@@ -161,4 +161,7 @@ make install
 (If building from the Git repository, you will first need to install
 autoconf, automake, libtool, and pkg-config and run "autoreconf -i".)
 
+Install packages: libjpeg, libffi, cairo:
+export PKG_CONFIG_PATH=/usr/local/Cellar/libffi/3.2.1/lib/pkgconfig/
+gdk-pkgbuf
 Good luck!
