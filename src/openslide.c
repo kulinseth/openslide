@@ -553,6 +553,37 @@ static bool ensure_nonnegative_dimensions(openslide_t *osr, int64_t w, int64_t h
   return true;
 }
 
+
+void openslide_native_tile(openslide_t *osr,
+                           uint32_t *dest,
+                           int64_t x, int64_t y,
+                           int32_t level) {
+
+}
+
+void openslide_get_native_tile_size(openslide_t *osr,
+                                    size_t* sz,
+                                    int64_t x, int64_t y,
+                                    int32_t level) {
+  GError *tmp_err = NULL;
+
+  if (level_in_range(osr, level)) {
+    struct _openslide_level *l = osr->levels[level];
+
+    // offset if given negative coordinates
+    double ds = l->downsample;
+
+    *sz = osr->ops->native_tile_size(osr, x, y, l, &tmp_err);
+  }
+
+OUT:
+  if (tmp_err) {
+    _openslide_propagate_error(osr, tmp_err);
+  }
+
+}
+
+
 void openslide_read_region(openslide_t *osr,
 			   uint32_t *dest,
 			   int64_t x, int64_t y,

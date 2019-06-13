@@ -187,6 +187,11 @@ void openslide_read_region(openslide_t *osr,
  * Its client responsbility to know which compression format was used
  * for the tiles using openslide_get_properties() API.
  *
+ * These functions turn the driver model of openslide on its head
+ * and expose vendor specific information like compression format
+ * and native tile w/h to the application. The reason its done this
+ * way is for efficiency to serve the deep learning applications.
+ *
  * openslide_native_tile_size() : returns the size of the tile
  * Here the _size API call returns the size of the compressed tile
  * which needs to be returned. Since the memory allocation is done
@@ -204,7 +209,7 @@ void openslide_native_tile(openslide_t *osr,
                            int32_t level);
 OPENSLIDE_PUBLIC()
 void openslide_get_native_tile_size(openslide_t *osr,
-                                    size_t* sz,
+                                    int64_t* sz,
                                     int64_t x, int64_t y,
                                     int32_t level);
 
@@ -221,14 +226,14 @@ void openslide_get_native_tile_size(openslide_t *osr,
 OPENSLIDE_PUBLIC()
 void openslide_native_region(openslide_t *osr,
                              uint32_t **dest,
-                             size_t *tile_sizes,
+                             int64_t *tile_sizes,
                              int64_t x, int64_t y,
                              int32_t level,
                              int64_t w, int64_t h);
 
 OPENSLIDE_PUBLIC()
 void openslide_get_native_region_sizes(openslide_t *osr,
-                                       size_t** tile_sizes,
+                                       int64_t** tile_sizes,
                                        int64_t x, int64_t y,
                                        int32_t level,
                                        int64_t w, int64_t h);

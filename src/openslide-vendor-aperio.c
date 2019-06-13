@@ -265,8 +265,22 @@ static bool paint_region(openslide_t *osr, cairo_t *cr,
   return success;
 }
 
+static void native_tile(openslide_t *osr, uint32_t *dest,
+                        int64_t x, int64_t y,
+                        struct _openslide_level *level, GError **err) {
+
+}
+
+static size_t native_tile_size(openslide_t *osr, int64_t x, int64_t y,
+                               struct _openslide_level *level,
+                               GError **err) {
+   return 0;
+}
+
 static const struct _openslide_ops aperio_ops = {
   .paint_region = paint_region,
+  .native_tile = native_tile,
+  .native_tile_size = native_tile_size,
   .destroy = destroy,
 };
 

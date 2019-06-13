@@ -53,6 +53,11 @@ without locking. (But you must lock or otherwise use memory barriers
 when passing the object between threads.)
 
 
+NOTE: For deep learning training setup we can relax lot of assumptions:
+1. More RAM is available so we don't need to break up the cairo tile scan
+2. Get rid of cairo 2D graphics library for rendering the decompressed region
+3. Get rid of intermediate caches like for instance the reading of the buffers
+
 Properties
 ==========
 

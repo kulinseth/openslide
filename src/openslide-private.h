@@ -92,6 +92,13 @@ struct _openslide_ops {
 		       struct _openslide_level *level,
 		       int32_t w, int32_t h,
 		       GError **err);
+  void (*native_tile)(openslide_t *osr,
+                           uint32_t *dest,
+                           int64_t x, int64_t y,
+                           struct _openslide_level *level, GError **err);
+  int64_t (*native_tile_size)(openslide_t *osr,
+                             int64_t x, int64_t y,
+                             struct _openslide_level *level, GError **err);
   void (*destroy)(openslide_t *osr);
 };
 
