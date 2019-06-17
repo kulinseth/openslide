@@ -203,15 +203,19 @@ void openslide_read_region(openslide_t *osr,
  *       width and height
  */
 OPENSLIDE_PUBLIC()
-void openslide_native_tile(openslide_t *osr,
-                           uint32_t *dest,
-                           int64_t x, int64_t y,
-                           int32_t level);
+void openslide_native_tile(openslide_t *osr,    // [IN] openslide handle
+                           uint8_t *dest,       // [OUT] buffer containing native tile
+                           int64_t aligned_x,   // [IN] X aligned to tile boundaries in pixel space
+                           int64_t aligned_y,   // [IN] Y aligned to tile boundaries in pixel space
+                           int32_t level);      // [IN] level
 OPENSLIDE_PUBLIC()
-void openslide_get_native_tile_size(openslide_t *osr,
-                                    int64_t* sz,
-                                    int64_t x, int64_t y,
-                                    int32_t level);
+void openslide_get_native_tile_data(openslide_t *osr,   // [IN] openslide handle
+                                    int64_t x,          // [IN] X in pixel space
+                                    int64_t y,          // [IN] Y in pixel space
+                                    int64_t* sz,        // [OUT] tile size
+                                    int64_t* aligned_x, // [OUT] aligned X to pixel space
+                                    int64_t* aligned_y, // [OUT] algined Y to pixel space
+                                    int32_t level);     // [IN] level
 
 /**
  * Extract native tile region covered by the (x, y, w, h) region

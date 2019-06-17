@@ -265,22 +265,95 @@ static bool paint_region(openslide_t *osr, cairo_t *cr,
   return success;
 }
 
-static void native_tile(openslide_t *osr, uint32_t *dest,
+static void native_tile(openslide_t *osr, uint8_t *dest,
                         int64_t x, int64_t y,
                         struct _openslide_level *level, GError **err) {
 
+  struct aperio_ops_data *data = osr->data;
+  struct level *l = (struct level *) level;
+  struct _openslide_tiff_level *tiffl = &l->tiffl;
+  TIFF *tiff = _openslide_tiffcache_get(data->tc, err);
+  if (tiff == NULL) {
+    return ;
+  }
+
+  // tile size
+  int64_t tw = tiffl->tile_w;
+  int64_t th = tiffl->tile_h;
+  int64_t tile_col = y/tw;
+  int64_t tile_row = x/th;
+
+  // TODO: lets revisit cache later depending on the tile access patterns.
+  //       for training the tiles would be revisited per epoch which depending
+  //       on the memory could be a lot of data
+  // struct _openslide_cache_entry *cache_entry;
+  // uint32_t *tiledata = _openslide_cache_get(osr->cache,
+  //                                          level, tile_col, tile_row,
+  //                                          &cache_entry);
+
+  // check for missing tile
+  int64_t tile_no = tile_row * tiffl->tiles_across + tile_col;
+  if (g_hash_table_lookup_extended(l->missing_tiles, &tile_no, NULL, NULL)) {
+    // If tile is missing the dest buffer is not written to
+    g_debug("missing tile in level %p: (%"PRId64", %"PRId64")", (void *) l, tile_col, tile_row);
+    return;
+  }
+
+   _openslide_tiff_read_native_tile(tiffl, tiff, dest,
+                                     tile_col, tile_row,
+                                     err);
+  _openslide_tiffcache_put(data->tc, tiff);
+  return;
 }
 
-static size_t native_tile_size(openslide_t *osr, int64_t x, int64_t y,
+static int64_t native_tile_data(openslide_t *osr, int64_t x, int64_t y,
+                                int64_t* aligned_x, int64_t* aligned_y,
                                struct _openslide_level *level,
                                GError **err) {
-   return 0;
+  struct aperio_ops_data *data = osr->data;
+  struct level *l = (struct level *) level;
+  struct _openslide_tiff_level *tiffl = &l->tiffl;
+  TIFF *tiff = _openslide_tiffcache_get(data->tc, err);
+  if (tiff == NULL) {
+    return -1;
+  }
+
+  // tile size
+  int64_t tw = tiffl->tile_w;
+  int64_t th = tiffl->tile_h;
+  int64_t tile_col = y/tw;
+  int64_t tile_row = x/th;
+  *aligned_y = tile_col*tw;
+  *aligned_x = tile_row*th;
+
+  // TODO: lets revisit cache later depending on the tile access patterns.
+  //       for training the tiles would be revisited per epoch which depending
+  //       on the memory could be a lot of data
+  // struct _openslide_cache_entry *cache_entry;
+  // uint32_t *tiledata = _openslide_cache_get(osr->cache,
+  //                                          level, tile_col, tile_row,
+  //                                          &cache_entry);
+
+  // check for missing tile, these are the tiles which are 0
+  int64_t tile_no = tile_row * tiffl->tiles_across + tile_col;
+  if (g_hash_table_lookup_extended(l->missing_tiles, &tile_no, NULL, NULL)) {
+    // If tile is missing the dest buffer is not written to
+    g_debug("missing tile in level %p: (%"PRId64", %"PRId64")", (void *) l, tile_col, tile_row);
+    return -1;
+  }
+
+  // read raw tile
+  int64_t sz = _openslide_tiff_read_native_tile_data(tiffl, tiff,
+                                      tile_col, tile_row,
+                                      err);
+  _openslide_tiffcache_put(data->tc, tiff);
+  return sz;
 }
 
 static const struct _openslide_ops aperio_ops = {
   .paint_region = paint_region,
   .native_tile = native_tile,
-  .native_tile_size = native_tile_size,
+  .native_tile_data = native_tile_data,
   .destroy = destroy,
 };
 

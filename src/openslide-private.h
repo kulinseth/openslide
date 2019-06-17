@@ -93,11 +93,12 @@ struct _openslide_ops {
 		       int32_t w, int32_t h,
 		       GError **err);
   void (*native_tile)(openslide_t *osr,
-                           uint32_t *dest,
+                           uint8_t *dest,
                            int64_t x, int64_t y,
                            struct _openslide_level *level, GError **err);
-  int64_t (*native_tile_size)(openslide_t *osr,
+  int64_t (*native_tile_data)(openslide_t *osr,
                              int64_t x, int64_t y,
+                             int64_t* aligned_x, int64_t* aligned_y,
                              struct _openslide_level *level, GError **err);
   void (*destroy)(openslide_t *osr);
 };

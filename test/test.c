@@ -158,6 +158,26 @@ static void test_image_fetch(openslide_t *osr,
   }
 }
 
+static void test_native(openslide_t* osr,
+                        int64_t w,
+                        int64_t h,
+                        int32_t level) {
+
+  int64_t sz;
+  int64_t ax, ay;
+  openslide_get_native_tile_data(osr, 0, 0, &sz, &ax, &ay, 0);
+  printf(" size (%"PRId64") (%"PRId64"x%"PRId64").", sz, ax, ay);
+  uint8_t *buf = malloc(sz);
+  openslide_native_tile(osr, buf, ax, ay, 0);
+  FILE *f = fopen("tmp.jpg", "wb");
+  if (f == NULL) {
+    perror("Cannot open file");
+    return;
+  }
+  fwrite(buf, sz, 1, f);
+  fclose(f);
+}
+
 /*
 static void test_horizontal_walk(openslide_t *osr,
 				 int64_t start_x,
@@ -280,6 +300,9 @@ int main(int argc, char **argv) {
     printf(" level %d dimensions: %"PRId64" x %"PRId64"\n", i, ww, hh);
   }
 
+  test_native(osr, w, h, levels);
+
+  return 0;
   print_downsamples(osr);
 
   test_next_biggest(osr, 0.8);

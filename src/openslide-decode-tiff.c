@@ -264,6 +264,125 @@ DONE:
   return result;
 }
 
+/*
+ * The difficulty with TIFF files produced by Photoshop is that they support
+ * writing the RGB colorspace into JPEG compressed data. If you extract a
+ * single tile from your TIFF file and write it as an independent JPEG image,
+ * it will not display correctly because decoders assume that the colorspace
+ * is YCbCr. There is a solution as long as the viewing application respects
+ * the Adobe APP14 marker. Included in this marker is a byte which defines
+ * the transform (colorspace). If you insert this sequence of bytes before the
+ * SOI, your image will display correctly on many viewers.
+ * FF EE 00 0E 41 64 6F 62 65 00 64 80 00 00 00 00
+ * The last byte defines the transform; in this case 0 indicates the RGB
+ * colorspace. You can read more about it here:
+ *
+ *
+ * In my case, since I had a huffman table to write as well,
+ * I wrote the Huffman table from the Tiff, minus the last 2 bytes which
+ * were end of image tags, then I wrote the 16 byte sequence above, then my
+ * image bytes, starting at byte 2.
+ */
+int64_t _openslide_tiff_read_native_tile_data(struct _openslide_tiff_level *tiffl,
+                               TIFF *tiff,
+                               int64_t tile_col, int64_t tile_row,
+                               GError **err) {
+  uint8_t jpeg_filler[] = {0xFF, 0xEE, 0x00, 0x0E,
+                         0x41, 0x64, 0x6F, 0x62,
+                         0x65, 0x00, 0x64, 0x80,
+                         0x00, 0x00, 0x00, 0x00};
+  // set directory
+  SET_DIR_OR_FAIL(tiff, tiffl->dir);
+
+  void *tables;
+  uint32_t tables_len;
+  if (!TIFFGetField(tiff, TIFFTAG_JPEGTABLES, &tables_len, &tables)) {
+    // no separate tables
+    tables = NULL;
+    tables_len = 0;
+  }
+
+  printf ("The tables len %d\n", tables_len);
+
+  // get tile number
+  ttile_t tile_no = TIFFComputeTile(tiff,
+                                    tile_col * tiffl->tile_w,
+                                    tile_row * tiffl->tile_h,
+                                    0, 0);
+
+  printf("_openslide_tiff_read_tile_data reading tile %d", tile_no);
+
+  // get tile size
+  toff_t *sizes;
+  if (TIFFGetField(tiff, TIFFTAG_TILEBYTECOUNTS, &sizes) == 0) {
+    g_set_error(err, OPENSLIDE_ERROR, OPENSLIDE_ERROR_FAILED,
+                "Cannot get tile size");
+    return -1;  // ok, haven't allocated anything yet
+  }
+  printf("The tile size %d\n", sizes[tile_no]);
+  return (tables_len + sizeof(jpeg_filler) + sizes[tile_no] - 4);
+}
+
+
+bool _openslide_tiff_read_native_tile(struct _openslide_tiff_level *tiffl,
+                               TIFF *tiff,
+                               uint8_t* dest,
+                               int64_t tile_col, int64_t tile_row,
+                               GError **err) {
+  // set directory
+  SET_DIR_OR_FAIL(tiff, tiffl->dir);
+  uint8_t jpeg_filler[] = {0xFF, 0xEE, 0x00, 0x0E,
+                         0x41, 0x64, 0x6F, 0x62,
+                         0x65, 0x00, 0x64, 0x80,
+                         0x00, 0x00, 0x00, 0x00};
+  // read tables
+  void *tables;
+  uint32_t tables_len;
+  uint8_t* _dest = dest;
+  if (TIFFGetField(tiff, TIFFTAG_JPEGTABLES, &tables_len, &tables)) {
+    memcpy(_dest, tables, tables_len-2);
+  } else {
+    // no separate tables
+    tables = NULL;
+    tables_len = 0;
+  }
+
+  // get tile number
+  ttile_t tile_no = TIFFComputeTile(tiff,
+                                    tile_col * tiffl->tile_w,
+                                    tile_row * tiffl->tile_h,
+                                    0, 0);
+
+  g_debug("_openslide_tiff_read_tile_data reading tile %d", tile_no);
+
+  // get tile size
+  toff_t *sizes;
+  if (TIFFGetField(tiff, TIFFTAG_TILEBYTECOUNTS, &sizes) == 0) {
+    g_set_error(err, OPENSLIDE_ERROR, OPENSLIDE_ERROR_FAILED,
+                "Cannot get tile size");
+    return false;  // ok, haven't allocated anything yet
+  }
+  tsize_t tile_size = sizes[tile_no];
+
+  // Add the JPEG filler
+  memcpy((_dest+tables_len-2), &jpeg_filler[0], sizeof(jpeg_filler));
+
+  // get raw tile
+  tdata_t buf = g_malloc(tile_size);
+  tsize_t size = TIFFReadRawTile(tiff, tile_no, buf, tile_size);
+  if (size == -1) {
+    g_set_error(err, OPENSLIDE_ERROR, OPENSLIDE_ERROR_FAILED,
+                "Cannot read raw tile");
+    g_free(buf);
+    return false;
+  } else {
+     memcpy((_dest+tables_len-2+sizeof(jpeg_filler)), buf+2, tile_size-2);
+  }
+  g_free(buf);
+  return true;
+}
+
+
 bool _openslide_tiff_read_tile(struct _openslide_tiff_level *tiffl,
                                TIFF *tiff,
                                uint32_t *dest,
