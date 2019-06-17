@@ -558,8 +558,18 @@ void openslide_native_tile(openslide_t *osr,
                            uint8_t *dest,
                            int64_t x, int64_t y,
                            int32_t level) {
+  GError *tmp_err = NULL;
 
+  if (level_in_range(osr, level)) {
+    struct _openslide_level *l = osr->levels[level];
+    osr->ops->native_tile(osr, dest, x, y, l, &tmp_err);
+  }
+
+  if (tmp_err) {
+    _openslide_propagate_error(osr, tmp_err);
+  }
 }
+
 
 void openslide_get_native_tile_data(openslide_t *osr,
                                     int64_t x, int64_t y,
@@ -571,14 +581,10 @@ void openslide_get_native_tile_data(openslide_t *osr,
   if (level_in_range(osr, level)) {
     struct _openslide_level *l = osr->levels[level];
 
-    // offset if given negative coordinates
-    double ds = l->downsample;
-
     *sz = osr->ops->native_tile_data(osr, x, y, aligned_x, aligned_y,
                                      l, &tmp_err);
   }
 
-OUT:
   if (tmp_err) {
     _openslide_propagate_error(osr, tmp_err);
   }

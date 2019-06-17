@@ -51,6 +51,17 @@ bool _openslide_tiff_level_init(TIFF *tiff,
                                 struct _openslide_tiff_level *tiffl,
                                 GError **err);
 
+bool _openslide_tiff_read_native_tile(struct _openslide_tiff_level *tiffl,
+                               TIFF *tiff,
+                               uint8_t* dest,
+                               int64_t tile_col, int64_t tile_row,
+                               GError **err);
+
+int64_t _openslide_tiff_read_native_tile_data(struct _openslide_tiff_level *tiffl,
+                               TIFF *tiff,
+                               int64_t tile_col, int64_t tile_row,
+                               GError **err);
+
 bool _openslide_tiff_check_missing_tile(struct _openslide_tiff_level *tiffl,
                                         TIFF *tiff,
                                         int64_t tile_col, int64_t tile_row,

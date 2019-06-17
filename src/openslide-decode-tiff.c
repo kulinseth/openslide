@@ -376,7 +376,7 @@ bool _openslide_tiff_read_native_tile(struct _openslide_tiff_level *tiffl,
     g_free(buf);
     return false;
   } else {
-     memcpy((_dest+tables_len-2+sizeof(jpeg_filler)), buf+2, tile_size-2);
+     memcpy((_dest+tables_len-2+sizeof(jpeg_filler)), (void*)((uint8_t*)buf+2), tile_size-2);
   }
   g_free(buf);
   return true;

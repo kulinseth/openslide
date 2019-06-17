@@ -158,10 +158,7 @@ static void test_image_fetch(openslide_t *osr,
   }
 }
 
-static void test_native(openslide_t* osr,
-                        int64_t w,
-                        int64_t h,
-                        int32_t level) {
+static void test_native(openslide_t* osr) {
 
   int64_t sz;
   int64_t ax, ay;
@@ -300,7 +297,7 @@ int main(int argc, char **argv) {
     printf(" level %d dimensions: %"PRId64" x %"PRId64"\n", i, ww, hh);
   }
 
-  test_native(osr, w, h, levels);
+  test_native(osr);
 
   return 0;
   print_downsamples(osr);
