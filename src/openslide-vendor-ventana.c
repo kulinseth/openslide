@@ -272,6 +272,8 @@ static bool paint_region(openslide_t *osr, cairo_t *cr,
 
 static const struct _openslide_ops ventana_ops = {
   .paint_region = paint_region,
+  .native_tile = NULL,
+  .native_tile_data = NULL,
   .destroy = destroy,
 };
 

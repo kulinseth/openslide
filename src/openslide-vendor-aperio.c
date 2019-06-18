@@ -338,7 +338,8 @@ static int64_t native_tile_data(openslide_t *osr, int64_t x, int64_t y,
   int64_t tile_no = tile_row * tiffl->tiles_across + tile_col;
   if (g_hash_table_lookup_extended(l->missing_tiles, &tile_no, NULL, NULL)) {
     // If tile is missing the dest buffer is not written to
-    g_debug("missing tile in level %p: (%"PRId64", %"PRId64")", (void *) l, tile_col, tile_row);
+    g_debug("missing tile in level %p: (%"PRId64", %"PRId64")",
+            (void *) l, tile_col, tile_row);
     return -1;
   }
 

@@ -604,7 +604,6 @@ void openslide_get_native_tile_data(openslide_t *osr,
   if (tmp_err) {
     _openslide_propagate_error(osr, tmp_err);
   }
-
 }
 
 

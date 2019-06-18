@@ -798,6 +798,8 @@ static void jpeg_do_destroy(openslide_t *osr) {
 
 static const struct _openslide_ops hamamatsu_jpeg_ops = {
   .paint_region = jpeg_paint_region,
+  .native_tile = NULL,
+  .native_tile_data = NULL,
   .destroy = jpeg_do_destroy,
 };
 
@@ -1685,6 +1687,8 @@ static bool ngr_paint_region(openslide_t *osr G_GNUC_UNUSED, cairo_t *cr,
 
 static const struct _openslide_ops ngr_ops = {
   .paint_region = ngr_paint_region,
+  .native_tile = NULL,
+  .native_tile_data = NULL,
   .destroy = ngr_destroy,
 };
 
