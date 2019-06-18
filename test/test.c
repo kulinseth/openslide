@@ -163,9 +163,9 @@ static void test_native(openslide_t* osr) {
   int64_t sz;
   int64_t ax, ay;
   openslide_get_native_tile_data(osr, 0, 0, &sz, &ax, &ay, 0);
-  printf(" size (%"PRId64") (%"PRId64"x%"PRId64").", sz, ax, ay);
+  printf(" size (%"PRId64") (%"PRId64"x%"PRId64").\n", sz, ax, ay);
   uint8_t *buf = malloc(sz);
-  openslide_native_tile(osr, buf, ax, ay, 0);
+  openslide_native_tile(osr, buf, sz, ax, ay, 0);
   FILE *f = fopen("tmp.jpg", "wb");
   if (f == NULL) {
     perror("Cannot open file");

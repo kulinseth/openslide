@@ -556,22 +556,24 @@ static bool ensure_nonnegative_dimensions(openslide_t *osr, int64_t w, int64_t h
 
 void openslide_native_tile(openslide_t *osr,
                            uint8_t *dest,
+                           int64_t sz,
                            int64_t x, int64_t y,
                            int32_t level) {
   GError *tmp_err = NULL;
 
-  if (!ensure_nonnegative_dimensions(osr, x, y)) {
+  // currently not supporting negative dimensions. The wrapping of the
+  // x and y is handled at the client side or wrapper API
+  // like in openslide-python
+  if (!ensure_nonnegative_dimensions(osr, x, y) || (sz <= 0)) {
     return;
   }
 
   if (level_in_range(osr, level)) {
     struct _openslide_level *l = osr->levels[level];
-    // TODO: Add memset to zero out the allocation, it would require passing in
-    // the size of the allocation, which will require interface change.
     // clear the dest
-    //if (dest) {
-    //  memset(dest, 0, l->tile_w * l->tile_h * 4);
-    //}
+    if (dest) {
+      memset(dest, 0, sz);
+    }
     osr->ops->native_tile(osr, dest, x, y, l, &tmp_err);
   }
 

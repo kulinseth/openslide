@@ -205,6 +205,7 @@ void openslide_read_region(openslide_t *osr,
 OPENSLIDE_PUBLIC()
 void openslide_native_tile(openslide_t *osr,    // [IN] openslide handle
                            uint8_t *dest,       // [OUT] buffer containing native tile
+                           int64_t sz,          // [IN] size of the buffer
                            int64_t aligned_x,   // [IN] X aligned to tile boundaries in pixel space
                            int64_t aligned_y,   // [IN] Y aligned to tile boundaries in pixel space
                            int32_t level);      // [IN] level

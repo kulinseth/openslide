@@ -302,15 +302,11 @@ int64_t _openslide_tiff_read_native_tile_data(struct _openslide_tiff_level *tiff
     tables_len = 0;
   }
 
-  printf ("The tables len %d\n", tables_len);
-
   // get tile number
   ttile_t tile_no = TIFFComputeTile(tiff,
                                     tile_col * tiffl->tile_w,
                                     tile_row * tiffl->tile_h,
                                     0, 0);
-
-  printf("_openslide_tiff_read_tile_data reading tile %d", tile_no);
 
   // get tile size
   toff_t *sizes;
@@ -319,7 +315,7 @@ int64_t _openslide_tiff_read_native_tile_data(struct _openslide_tiff_level *tiff
                 "Cannot get tile size");
     return -1;  // ok, haven't allocated anything yet
   }
-  printf("The tile size %d\n", sizes[tile_no]);
+
   return (tables_len + sizeof(jpeg_filler) + sizes[tile_no] - 4);
 }
 
@@ -376,7 +372,8 @@ bool _openslide_tiff_read_native_tile(struct _openslide_tiff_level *tiffl,
     g_free(buf);
     return false;
   } else {
-     memcpy((_dest+tables_len-2+sizeof(jpeg_filler)), (void*)((uint8_t*)buf+2), tile_size-2);
+     memcpy((_dest+tables_len-2+sizeof(jpeg_filler)),
+            (void*)((uint8_t*)buf+2), tile_size-2);
   }
   g_free(buf);
   return true;
