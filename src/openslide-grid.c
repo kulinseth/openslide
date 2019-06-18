@@ -176,6 +176,23 @@ static void compute_region(struct _openslide_grid *grid,
   region->offset_y = y - (region->start_tile_y * grid->tile_advance_y);
 }
 
+static void compute_native_tile(struct _openslide_grid *grid,
+                           double x, double y,
+                           struct region *region) {
+  region->x = x;
+  region->y = y;
+  region->w = grid->tile_advance_x;
+  region->h = grid->tile_advance_y;
+
+  region->start_tile_x = x / grid->tile_advance_x;
+  region->end_tile_x = ceil((x + grid->tile_advance_x) / grid->tile_advance_x);
+  region->start_tile_y = y / grid->tile_advance_y;
+  region->end_tile_y = ceil((y + grid->tile_advance_y) / grid->tile_advance_y);
+
+  region->offset_x = x - (region->start_tile_x * grid->tile_advance_x);
+  region->offset_y = y - (region->start_tile_y * grid->tile_advance_y);
+}
+
 static bool read_tiles(cairo_t *cr,
                        struct _openslide_level *level,
                        struct _openslide_grid *grid,
@@ -877,6 +894,56 @@ void _openslide_grid_get_bounds(struct _openslide_grid *grid,
   if (h) {
     *h = bounds.h;
   }
+}
+
+bool _openslide_grid_native_tile(struct _openslide_grid *_grid,
+                                  double x, double y,
+                                  struct _openslide_level *level,
+                                  int64_t* tile_col, int64_t* tile_row,
+                                  GError **err) {
+  struct simple_grid *grid = (struct simple_grid *) _grid;
+  struct region region;
+
+  (void)level;
+  (void)err;
+  compute_native_tile(_grid, x, y, &region);
+
+  // check if completely outside grid
+  if (region.end_tile_x <= 0 ||
+      region.end_tile_y <= 0 ||
+      region.start_tile_x > grid->tiles_across - 1 ||
+      region.start_tile_y > grid->tiles_down - 1) {
+    return false;
+  }
+
+  // bound on left/top
+  int64_t skipped_tiles_x = -MIN(region.start_tile_x, 0);
+  int64_t skipped_tiles_y = -MIN(region.start_tile_y, 0);
+  region.start_tile_x += skipped_tiles_x;
+  region.start_tile_y += skipped_tiles_y;
+
+  // bound on right/bottom
+  region.end_tile_x = MIN(region.end_tile_x, grid->tiles_across);
+  region.end_tile_y = MIN(region.end_tile_y, grid->tiles_down);
+
+  // NOTE: When extending this logic to native_region (native_tile would be
+  // just a special case of this). There are few things to take care of:
+  // 1. would need a list of all the tiles to traverse over
+  // 2. woule need the end tile for padding on the bottom right
+  // 3. offset can be used to calculate the tile most covered, in the case of
+  //    region all the touching tiles would be returned
+  if (region.start_tile_x < grid->tiles_across - 1 &&
+      region.offset_x > (_grid->tile_advance_x / 2.0)) {
+     region.start_tile_x += 1;
+  }
+  if (region.start_tile_y < grid->tiles_down - 1 &&
+      region.offset_y > (_grid->tile_advance_y / 2.0)) {
+     region.start_tile_y += 1;
+  }
+  *tile_col = region.start_tile_x;
+  *tile_row = region.start_tile_y;
+
+  return true;
 }
 
 bool _openslide_grid_paint_region(struct _openslide_grid *grid,

@@ -277,15 +277,25 @@ static void native_tile(openslide_t *osr, uint8_t *dest,
     return ;
   }
 
-  // tile size
-  int64_t tw = tiffl->tile_w;
-  int64_t th = tiffl->tile_h;
-  int64_t tile_col = y/tw;
-  int64_t tile_row = x/th;
+  // tile size and calculation
+  int64_t tile_col;
+  int64_t tile_row;
+
+  if ( !_openslide_grid_native_tile(l->grid,
+                                    x / l->base.downsample,
+                                    y / l->base.downsample,
+                                    level,
+                                    &tile_col, &tile_row,
+                                    err)) {
+     g_set_error(err, OPENSLIDE_ERROR, OPENSLIDE_ERROR_FAILED,
+                "Tile is outside the slide or couldnt map to tile-space");
+     return;
+  }
+
 
   // TODO: lets revisit cache later depending on the tile access patterns.
   //       for training the tiles would be revisited per epoch which depending
-  //       on the memory could be a lot of data
+  //       on the memory could be a lot of cache eviction
   // struct _openslide_cache_entry *cache_entry;
   // uint32_t *tiledata = _openslide_cache_get(osr->cache,
   //                                          level, tile_col, tile_row,
@@ -295,13 +305,14 @@ static void native_tile(openslide_t *osr, uint8_t *dest,
   int64_t tile_no = tile_row * tiffl->tiles_across + tile_col;
   if (g_hash_table_lookup_extended(l->missing_tiles, &tile_no, NULL, NULL)) {
     // If tile is missing the dest buffer is not written to
-    g_debug("missing tile in level %p: (%"PRId64", %"PRId64")", (void *) l, tile_col, tile_row);
+    g_debug("missing tile in level %p: (%"PRId64", %"PRId64")",
+            (void *) l, tile_col, tile_row);
     return;
   }
 
-   _openslide_tiff_read_native_tile(tiffl, tiff, dest,
-                                     tile_col, tile_row,
-                                     err);
+  _openslide_tiff_read_native_tile(tiffl, tiff, dest,
+                                   tile_col, tile_row,
+                                   err);
   _openslide_tiffcache_put(data->tc, tiff);
   return;
 }
@@ -315,16 +326,25 @@ static int64_t native_tile_data(openslide_t *osr, int64_t x, int64_t y,
   struct _openslide_tiff_level *tiffl = &l->tiffl;
   TIFF *tiff = _openslide_tiffcache_get(data->tc, err);
   if (tiff == NULL) {
-    return -1;
+    return 0;
   }
 
   // tile size
   int64_t tw = tiffl->tile_w;
   int64_t th = tiffl->tile_h;
-  int64_t tile_col = y/tw;
-  int64_t tile_row = x/th;
-  *aligned_y = tile_col*tw;
-  *aligned_x = tile_row*th;
+  int64_t tile_col;
+  int64_t tile_row;
+  if (!_openslide_grid_native_tile(l->grid,
+                                   x / l->base.downsample,
+                                   y / l->base.downsample,
+                                   level,
+                                   &tile_col, &tile_row,
+                                   err)) {
+     return 0;
+  }
+
+  *aligned_y = tile_row*th;
+  *aligned_x = tile_col*tw;
 
   // TODO: lets revisit cache later depending on the tile access patterns.
   //       for training the tiles would be revisited per epoch which depending
@@ -345,8 +365,8 @@ static int64_t native_tile_data(openslide_t *osr, int64_t x, int64_t y,
 
   // read raw tile
   int64_t sz = _openslide_tiff_read_native_tile_data(tiffl, tiff,
-                                      tile_col, tile_row,
-                                      err);
+                                                     tile_col, tile_row,
+                                                     err);
   _openslide_tiffcache_put(data->tc, tiff);
   return sz;
 }
