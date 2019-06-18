@@ -560,8 +560,18 @@ void openslide_native_tile(openslide_t *osr,
                            int32_t level) {
   GError *tmp_err = NULL;
 
+  if (!ensure_nonnegative_dimensions(osr, x, y)) {
+    return;
+  }
+
   if (level_in_range(osr, level)) {
     struct _openslide_level *l = osr->levels[level];
+    // TODO: Add memset to zero out the allocation, it would require passing in
+    // the size of the allocation, which will require interface change.
+    // clear the dest
+    //if (dest) {
+    //  memset(dest, 0, l->tile_w * l->tile_h * 4);
+    //}
     osr->ops->native_tile(osr, dest, x, y, l, &tmp_err);
   }
 
@@ -577,6 +587,10 @@ void openslide_get_native_tile_data(openslide_t *osr,
                                     int64_t* aligned_x, int64_t* aligned_y,
                                     int32_t level) {
   GError *tmp_err = NULL;
+
+  if (!ensure_nonnegative_dimensions(osr, x, y)) {
+    return;
+  }
 
   if (level_in_range(osr, level)) {
     struct _openslide_level *l = osr->levels[level];
