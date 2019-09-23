@@ -1,0 +1,3 @@
+[submodule "external/NCRF"]
+	path = external/NCRF
+	url = https://github.com/baidu-research/NCRF.git
