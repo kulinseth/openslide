@@ -197,17 +197,13 @@ void openslide_read_region(openslide_t *osr,
  * which needs to be returned. Since the memory allocation is done
  * by the client this model requires client to query the size. The
  * reason being that size of different tiles are different.
- *
- * TODO: extend this function to return the native tile which would
- *       cover the maximum region given (x, y) point and the native
- *       width and height
  */
 OPENSLIDE_PUBLIC()
 void openslide_native_tile(openslide_t *osr,    // [IN] openslide handle
                            uint8_t *dest,       // [OUT] buffer containing native tile
                            int64_t sz,          // [IN] size of the buffer
-                           int64_t aligned_x,   // [IN] X aligned to tile boundaries in pixel space
-                           int64_t aligned_y,   // [IN] Y aligned to tile boundaries in pixel space
+                           int64_t aligned_x,   // [IN] X aligned to tile boundaries
+                           int64_t aligned_y,   // [IN] Y aligned to tile boundaries
                            int32_t level);      // [IN] level
 OPENSLIDE_PUBLIC()
 void openslide_get_native_tile_data(openslide_t *osr,   // [IN] openslide handle
@@ -220,28 +216,43 @@ void openslide_get_native_tile_data(openslide_t *osr,   // [IN] openslide handle
 
 /**
  * Extract native tile region covered by the (x, y, w, h) region
- * specified by the whole slide image. This API is not very robust.
- * Here the native tiles are a list of all the tiles covered by the
- * specified region in the pixel space.
+ * Alternatively provide list of grid points and return the tiles covered by
+ * them.
+ * specified by the whole slide image. Here the native tiles are a list of all
+ * the tiles covered by the specified region in the pixel space.
  *
  * dest [out]: contains a list of native tiles, whose memory is allocated
  * tile_sizes [in]: list of input tile size
  *
  */
 OPENSLIDE_PUBLIC()
-void openslide_native_region(openslide_t *osr,
-                             uint32_t **dest,
-                             int64_t *tile_sizes,
-                             int64_t x, int64_t y,
-                             int32_t level,
-                             int64_t w, int64_t h);
+void openslide_native_region(openslide_t *osr,     // [IN] openslide slide handle
+                             uint8_t **dest,       // [OUT] buffer containing native tiles
+                             int64_t *tile_sizes,  // [IN] array of tile sizes
+                             int64_t x, int64_t y, // [IN] top left X, Y coordinates
+                             int32_t level,        // [IN] maginification level
+                             int64_t w, int64_t h);// [IN] width and height of the region
 
 OPENSLIDE_PUBLIC()
-void openslide_get_native_region_sizes(openslide_t *osr,
-                                       int64_t** tile_sizes,
-                                       int64_t x, int64_t y,
+void openslide_get_native_region_sizes(openslide_t *osr,     // [IN] slide handle
+                                       int64_t* tile_sizes,  // [OUT] return array of tile sizes
+                                       int64_t x, int64_t y, // [IN] top-left X,Y coordinates
+                                       int32_t level,        // [IN] mag level
+                                       int64_t w, int64_t h);// [IN] width/height of region
+OPENSLIDE_PUBLIC()
+void openslide_native_grid(openslide_t *osr,
+                             uint8_t **dest,
+                             int64_t *tile_sizes,
+                             int64_t *aligned_x,
+                             int64_t *aligned_y,
+                             int32_t level,
+                             int32_t count);
+OPENSLIDE_PUBLIC()
+void openslide_get_native_grid_sizes(openslide_t *osr,
+                                       int64_t* tile_sizes,
+                                       int64_t* x, int64_t* y,
                                        int32_t level,
-                                       int64_t w, int64_t h);
+                                       int32_t count);
 
 /**
  * Close an OpenSlide object.
